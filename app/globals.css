@@ -11,9 +11,15 @@
   --border2:   rgba(255,255,255,0.08);
   --text:      #E8E8E8;
   --text2:     #888888;
-  --text3:     #333333;
-  --accent:      }
-    }
+ --text3:     #333333;
+--accent:    #E8E8E8;
+--r-sm:      6px;
+--r-md:      10px;
+--r-lg:      16px;
+--r-xl:      16px;
+--font-syne: 'Syne', sans-serif;
+--font-sans: 'DM Sans', -apple-system, sans-serif;
+}
 
     html { scroll-behavior: smooth; }
 
