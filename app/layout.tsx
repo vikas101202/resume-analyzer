@@ -11,7 +11,7 @@ const syne = Syne({
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "700"],
 });
 
 export const metadata: Metadata = {
@@ -21,15 +21,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      className={`${syne.variable} ${dmSans.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-[#060606]">{children}</body>
+    <html lang="en" className={`${syne.variable} ${dmSans.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }

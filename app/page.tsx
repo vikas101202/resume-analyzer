@@ -73,33 +73,42 @@ export default function Home() {
       cancelAnimationFrame(frame);
     };
   }, []);
+async function extractPdfText(file: File) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-  async function extractPdfText(file: File) {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = "";
-    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-      const page = await pdf.getPage(pageNumber);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map((item: any) => item.str).join(" ");
-      fullText += pageText + "\n";
-    }
-    return fullText;
+  let fullText = "";
+
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+    const page = await pdf.getPage(pageNumber);
+    const textContent = await page.getTextContent();
+
+    const pageText = textContent.items
+      .map((item: any) => item.str)
+      .join(" ");
+
+    fullText += pageText + "\n";
   }
 
+  return fullText;
+}
   function pick(f?: File) {
     if (!f) return;
+
     if (!["application/pdf", "image/jpeg", "image/jpg", "image/png"].includes(f.type)) {
       setError("Please upload a PDF, JPG or PNG.");
       return;
     }
+
     if (f.size > 10 * 1024 * 1024) {
       setError("File must be under 10 MB.");
       return;
     }
+
     setFile(f);
     setError("");
     setAnalysis(null);
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const result = String(event.target?.result || "");
@@ -117,46 +126,72 @@ export default function Home() {
   }
 
   async function analyze() {
+  
     setError("");
+
+    //if (!file || !b64) {
+      //setError("Please upload your résumé first.");
+      //return;
+    //}
+
     setLoading(true);
     setAnalysis(null);
-
     if (file?.type === "application/pdf") {
-      const text = await extractPdfText(file);
-      console.log("Extracted PDF text:", text);
-    }
+  const text = await extractPdfText(file);
+  console.log("Extracted PDF text:", text);
+}
 
     try {
-      const resumeText = file?.type === "application/pdf" ? await extractPdfText(file) : "";
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resumeText }),
-      });
-      const data = await res.json();
-      setAnalysis(data);
-      setTimeout(() => {
-        document.getElementById("results")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
-    } catch (e) {
-      setError("Something went wrong while contacting backend.");
-    } finally {
-      setLoading(false);
-    }
+ const resumeText =
+  file?.type === "application/pdf"
+    ? await extractPdfText(file)
+    : "";
+
+const res = await fetch("/api/analyze", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    resumeText,
+  }),
+});
+
+const data = await res.json();
+
+  setAnalysis(data);
+
+  setTimeout(() => {
+    document.getElementById("results")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, 100);
+} catch (e) {
+  setError("Something went wrong while contacting backend.");
+} finally {
+  setLoading(false);
+}
+
   }
 
   function circleFor(value: number, label: string) {
     const r = 28;
     const c = 2 * Math.PI * r;
     const dash = (Math.min(100, Math.max(0, value)) / 100) * c;
+
     return (
       <div className="score-cell">
         <div className="sc-wrap">
           <svg width="68" height="68" viewBox="0 0 68 68">
-            <circle cx="34" cy="34" r={r} fill="none" stroke="#1A1A1A" strokeWidth="4" />
+            <circle cx="34" cy="34" r={r} fill="none" stroke="var(--bg3)" strokeWidth="4" />
             <circle
-              cx="34" cy="34" r={r}
-              fill="none" stroke="#C0C0C0" strokeWidth="4"
+              cx="34"
+              cy="34"
+              r={r}
+              fill="none"
+              stroke="var(--text)"
+              strokeWidth="4"
               strokeDasharray={`${dash.toFixed(2)} ${c.toFixed(2)}`}
               strokeLinecap="round"
               style={{ transition: "stroke-dasharray 1.1s cubic-bezier(0.34,1.4,0.64,1)" }}
@@ -174,37 +209,27 @@ export default function Home() {
       <div id="orb" ref={orbRef}></div>
 
       <div className="page">
-
-        {/* NAV */}
         <nav>
-          <div className="wordmark">
-            RESUME
-            <div className="wordmark-sep"></div>
-            <span className="wordmark-sub">Analyzer</span>
-          </div>
-          <div className="nav-right">
-            <div className="nav-dot"></div>
-            <span className="nav-tag">AI · Instant</span>
-          </div>
+          <span className="nav-logo">RA</span>
+          <span className="nav-tag">Resume Analyzer</span>
         </nav>
 
-        {/* HERO */}
         <div className="hero">
-          <div className="rule-top"></div>
-          <div className="eyebrow">AI-powered · ATS intelligence</div>
-          <h1>
-            YOUR RÉSUMÉ,
-            <em>refined.</em>
-          </h1>
-          <div className="rule-mid"></div>
+          <span className="hero-kicker">AI-powered · Instant feedback</span>
+<h1 className="hero-title">
+  <span>YOUR</span>
+  <span>RESUME,</span>
+  <em>refined.</em>
+</h1>
           <p>Upload your résumé and receive a detailed ATS score, skill gaps, and precise improvements — in seconds.</p>
         </div>
 
-        {/* FORM CARD */}
         <div className="card">
           <div className="field-row">
             <div>
-              <label className="field-label" htmlFor="job-role">Target role</label>
+              <label className="field-label" htmlFor="job-role">
+                Target role
+              </label>
               <input
                 className="field-input"
                 type="text"
@@ -215,7 +240,9 @@ export default function Home() {
               />
             </div>
             <div>
-              <label className="field-label" htmlFor="experience">Experience</label>
+              <label className="field-label" htmlFor="experience">
+                Experience
+              </label>
               <input
                 className="field-input"
                 type="text"
@@ -227,22 +254,36 @@ export default function Home() {
             </div>
           </div>
 
+          <div className="upload-label-row">
+            <span>Resume file</span>
+            <span>Max 10 MB</span>
+          </div>
+
           {!file && (
             <div
               className={`drop-zone ${isOver ? "over" : ""}`}
-              onDragOver={(e) => { e.preventDefault(); setIsOver(true); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsOver(true);
+              }}
               onDragLeave={() => setIsOver(false)}
-              onDrop={(e) => { e.preventDefault(); setIsOver(false); pick(e.dataTransfer.files[0]); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsOver(false);
+                pick(e.dataTransfer.files[0]);
+              }}
             >
               <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/pdf,image/jpeg,image/png"
-                onChange={(e) => pick(e.target.files?.[0])}
+  ref={fileInputRef}
+  type="file"
+  accept="application/pdf,image/jpeg,image/png"
+  onChange={(e) => {
+    const selectedFile = e.target.files?.[0];
+    console.log("Selected file:", selectedFile);
+    pick(selectedFile);
+  }}
               />
-              <div className="drop-icon">
-                <i className="ti ti-cloud-upload"></i>
-              </div>
+              <i className="ti ti-upload dz-icon"></i>
               <div className="dz-main">Drop your file here</div>
               <div className="dz-sub">or click to browse your device</div>
               <div className="dz-pills">
@@ -274,61 +315,22 @@ export default function Home() {
           )}
         </div>
 
-        {/* CTA */}
-        <button className="cta" onClick={analyze}>
-          <span className="cta-line"></span>
-          <i className="ti ti-arrow-right"></i>
-          Analyze résumé
-          <span className="cta-line"></span>
+       <button className="cta" onClick={analyze}>
+          Analyze résumé &nbsp;→
         </button>
 
-        {/* LOADING */}
         <div className={`loading ${loading ? "show" : ""}`}>
           <div className="loading-dots">
-            <span></span><span></span><span></span>
+            <span></span>
+            <span></span>
+            <span></span>
           </div>
           <p>Reading your résumé…</p>
         </div>
 
-        {/* STATS STRIP */}
-        <div className="stats-strip">
-          <div className="stat-card">
-            <span className="stat-num">98%</span>
-            <span className="stat-label">ATS accuracy</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-num">3s</span>
-            <span className="stat-label">Avg. response</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-num">50k+</span>
-            <span className="stat-label">Résumés analyzed</span>
-          </div>
-        </div>
-
-        {/* FEATURES */}
-        <div className="feats-strip">
-          <div className="feat-card">
-            <div className="feat-num">01</div>
-            <div className="feat-title">ATS score</div>
-            <div className="feat-desc">Know exactly where you stand with applicant tracking systems</div>
-          </div>
-          <div className="feat-card">
-            <div className="feat-num">02</div>
-            <div className="feat-title">Skill gaps</div>
-            <div className="feat-desc">Identify missing skills for your exact target role</div>
-          </div>
-          <div className="feat-card">
-            <div className="feat-num">03</div>
-            <div className="feat-title">Precise edits</div>
-            <div className="feat-desc">Line-level suggestions you can act on immediately</div>
-          </div>
-        </div>
-
-        {/* RESULTS */}
         <div className={`results ${analysis ? "show" : ""}`} id="results">
           {analysis && (
-            <div className="card result-card">
+            <div className="card" style={{ marginTop: "1rem" }}>
               <div className="res-head">
                 <h2>Analysis</h2>
                 <span>{file?.name}</span>
@@ -344,7 +346,7 @@ export default function Home() {
               <div className="tags">
                 {analysis.strengths.map((item) => (
                   <span className="tag pos" key={item}>
-                    <i className="ti ti-check" style={{ fontSize: "11px" }}></i>
+                    <i className="ti ti-check" style={{ fontSize: "11px", color: "var(--text3)" }}></i>
                     {item}
                   </span>
                 ))}
@@ -353,14 +355,18 @@ export default function Home() {
               <div className="sh">Gaps &amp; missing sections</div>
               <div className="tags">
                 {analysis.gaps.map((item) => (
-                  <span className="tag neg" key={item}>{item}</span>
+                  <span className="tag neg" key={item}>
+                    {item}
+                  </span>
                 ))}
               </div>
 
               <div className="sh">Skills detected</div>
               <div className="tags">
                 {analysis.skills.map((item) => (
-                  <span className="tag skill" key={item}>{item}</span>
+                  <span className="tag skill" key={item}>
+                    {item}
+                  </span>
                 ))}
               </div>
 
@@ -382,13 +388,6 @@ export default function Home() {
             </div>
           )}
         </div>
-
-        {/* FOOTER */}
-        <footer>
-          <span>Resume Analyzer · All rights reserved</span>
-          <span>2026</span>
-        </footer>
-
       </div>
     </>
   );
